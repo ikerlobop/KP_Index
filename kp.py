@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import matplotlib.dates as mdates
 from datetime import datetime
-import time
 
 # URL de la API de NOAA para el índice Kp
 url = "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json"
@@ -31,7 +30,6 @@ bounds = [0, 4, 5, 7, 9]  # Definir los límites para los colores
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
 # Crear el gráfico estático de la barra de colores (esto no se actualiza)
-# Añadir la barra de colores estática asociada al gráfico 'ax'
 sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])  # Establecer una matriz vacía para el mapeador de colores
 cbar = plt.colorbar(sm, ax=ax, ticks=[1, 3, 5, 7, 9])  # Asocia la barra de colores a 'ax'
@@ -42,15 +40,15 @@ def actualizar_grafico():
     # Obtener los datos
     kp_data = obtener_ultimos_20_kp()
 
-    # Extraer fechas y valores del índice Kp
+    # Extraer fechas y valores estimados del índice Kp (en decimales)
     fechas = [parse_time(kp['time_tag']) for kp in kp_data]
-    kp_indices = [kp['kp_index'] for kp in kp_data]
+    kp_estimated = [kp['estimated_kp'] for kp in kp_data] 
 
     # Limpiar el gráfico de datos anterior
     ax.clear()
 
-    # Graficar los valores nuevos
-    sc = ax.scatter(fechas, kp_indices, c=kp_indices, cmap=cmap, norm=norm, s=100)
+    # Graficar los valores nuevos (en decimales)
+    sc = ax.scatter(fechas, kp_estimated, c=kp_estimated, cmap=cmap, norm=norm, s=100)
 
     # Formato de la fecha en el eje x
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
@@ -59,16 +57,20 @@ def actualizar_grafico():
 
     # Etiquetas y título
     ax.set_xlabel('Fecha y Hora')
-    ax.set_ylabel('Índice Kp')
-    ax.set_title('Índice Kp de las últimas 20 observaciones')
+    ax.set_ylabel('Índice Kp (Estimado)')
+    ax.set_title('Índice Kp Estimado de las últimas 20 observaciones')
 
     # Ajustar diseño y mostrar solo los datos
     plt.tight_layout()
     plt.draw()
 
-# Mostrar el gráfico inicialmente con la barra de colores fija
-plt.ion()  # Modo interactivo para actualizaciones
-actualizar_grafico()  # Llamada inicial para mostrar datos la primera vez
+plt.ion()
+actualizar_grafico()
+
+while plt.get_fignums():
+    actualizar_grafico()
+    plt.pause(60)
+
 
 # Bucle que actualiza el gráfico de datos cada 60 segundos (sin tocar la barra de colores)
 while True:
