@@ -22,7 +22,7 @@ def parse_time(time_string):
     except ValueError:
         return datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S')
 
-# Crear el gráfico inicial
+# Crear el gráfico inicial y la barra de colores estática
 fig, ax = plt.subplots()
 
 # Crear el mapa de colores basado en los valores de Kp
@@ -30,6 +30,14 @@ cmap = colors.ListedColormap(['green', 'yellow', 'orange', 'red'])
 bounds = [0, 4, 5, 7, 9]  # Definir los límites para los colores
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
+# Crear el gráfico estático de la barra de colores (esto no se actualiza)
+# Añadir la barra de colores estática asociada al gráfico 'ax'
+sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])  # Establecer una matriz vacía para el mapeador de colores
+cbar = plt.colorbar(sm, ax=ax, ticks=[1, 3, 5, 7, 9])  # Asocia la barra de colores a 'ax'
+cbar.ax.set_yticklabels(['Bajo', 'Moderado', 'Activo', 'Tormenta', 'Tormenta severa'])
+
+# La función que se ejecuta en el bucle para actualizar solo los datos
 def actualizar_grafico():
     # Obtener los datos
     kp_data = obtener_ultimos_20_kp()
@@ -38,10 +46,10 @@ def actualizar_grafico():
     fechas = [parse_time(kp['time_tag']) for kp in kp_data]
     kp_indices = [kp['kp_index'] for kp in kp_data]
 
-    # Limpiar el gráfico anterior
+    # Limpiar el gráfico de datos anterior
     ax.clear()
 
-    # Graficar los valores
+    # Graficar los valores nuevos
     sc = ax.scatter(fechas, kp_indices, c=kp_indices, cmap=cmap, norm=norm, s=100)
 
     # Formato de la fecha en el eje x
@@ -54,17 +62,15 @@ def actualizar_grafico():
     ax.set_ylabel('Índice Kp')
     ax.set_title('Índice Kp de las últimas 20 observaciones')
 
-    # Añadir la barra de colores
-    cbar = plt.colorbar(sc, ticks=[1, 3, 5, 7, 9])
-    cbar.ax.set_yticklabels(['Bajo', 'Moderado', 'Activo', 'Tormenta', 'Tormenta severa'])
-
-    # Ajustar diseño y mostrar
+    # Ajustar diseño y mostrar solo los datos
     plt.tight_layout()
     plt.draw()
 
-# Bucle que actualiza el gráfico cada 60 segundos
+# Mostrar el gráfico inicialmente con la barra de colores fija
+plt.ion()  # Modo interactivo para actualizaciones
+actualizar_grafico()  # Llamada inicial para mostrar datos la primera vez
+
+# Bucle que actualiza el gráfico de datos cada 60 segundos (sin tocar la barra de colores)
 while True:
     actualizar_grafico()
     plt.pause(60)  # Pausar por 60 segundos antes de actualizar
-
-
